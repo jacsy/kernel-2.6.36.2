@@ -22,6 +22,7 @@
 #include <linux/serial_core.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
+#include <linux/dm9000.h>
 
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
@@ -52,6 +53,45 @@
 
 #include <plat/common-smdk.h>
 #include <plat/nand.h>
+
+/* DM9000AEP 10/100 ethernet controller */
+#define MACH_MINI2440_DM90000_BASE	(S3C2410_CS4+0x300)
+
+static struct resource mini2440_dm9000_resource[] ={
+	[0] = {
+		.start	= MACH_MINI2440_DM90000_BASE,
+		.end	= MACH_MINI2440_DM90000_BASE + 3,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.start	= MACH_MINI2440_DM90000_BASE + 4,
+		.end	= MACH_MINI2440_DM90000_BASE + 7,
+		.flags	= IORESOURCE_MEM,
+	},
+	[2] = {
+		.start	= IRQ_EINT7,
+		.end	= IRQ_EINT7,
+		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
+	},
+};
+
+/*
+* the DM9000 has not eeprom, and it's MAC address have been set by
+* the bootloader before starting the kernel
+*/
+static struct dm9000_plat_data mini2440_dm9000_pdata = {
+	.flags	= (DM9000_PLATF_16BITONLY | DM9000_PLATF_NO_EEPROM),
+};
+
+static struct platform_device mini2440_device_ethernet = {
+	.name			= "dm9000",
+	.id				= -1,
+	.num_resources	= ARRAY_SIZE(mini2440_dm9000_resource),
+	.resource		= mini2440_dm9000_resource,
+	.dev			= {
+		.platform_data	= &mini2440_dm9000_pdata,
+	},
+};
 
 static struct map_desc mini2440_iodesc[] __initdata = {
 	/* ISA IO Space map (memory space selected by A24) */
@@ -207,6 +247,7 @@ static struct platform_device *mini2440_devices[] __initdata = {
 	&s3c_device_wdt,
 	&s3c_device_i2c0,
 	&s3c_device_iis,
+	&mini2440_device_ethernet,
 	&s3c_device_nand,
 };
 
